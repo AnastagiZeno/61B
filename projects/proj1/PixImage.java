@@ -31,7 +31,7 @@ public class PixImage {
 
     private int width;
     private int height;
-    private short[][][] pixels;
+    private Pixel[][] pixels;
 
 
     /**
@@ -45,17 +45,43 @@ public class PixImage {
         // Your solution here.
         this.width = width;
         this.height = height;
-        this.pixels = new short[width][height][3];
+        this.pixels = new Pixel[width][height];
+        imageInitialize();
     }
 
     private void imageInitialize() {
         for (int i=0; i<width; i++) {
             for (int j=0; j<height; j++) {
-                for (int z=0; z<3; z++) {
-                    pixels[i][i][z] = 0;
-                }
+                pixels[i][j] = new Pixel((short)0, (short)0, (short)0);
             }
         }
+    }
+
+    private Pixel[][] getSobelPixelNeighbours(int w, int h) {
+        Pixel[][] neighbours = new Pixel[3][3];
+        int idxni = 0;
+        int idxnj = 0;
+        for (int i=w-1; i<=w+1; i++) {
+            for (int j=h-1; j<=h+1; j++) {
+                int inneri = i;
+                int innerj = j;
+                if (i < 0) {
+                    inneri = 0;
+                } else if (i == width) {
+                    inneri = width - 1;
+                }
+                if (j < 0) {
+                    innerj = 0;
+                } else if (j == height) {
+                    innerj = height - 1;
+                }
+                neighbours[idxni][idxnj] = pixels[inneri][innerj];
+                idxnj++;
+            }
+            idxni++;
+            idxnj = 0;
+        }
+        return neighbours;
     }
 
     /**
@@ -87,7 +113,7 @@ public class PixImage {
      */
     public short getRed(int x, int y) {
         // Replace the following line with your solution.
-        return pixels[x][y][0];
+        return pixels[x][y].getR();
     }
 
     /**
@@ -99,7 +125,7 @@ public class PixImage {
      */
     public short getGreen(int x, int y) {
         // Replace the following line with your solution.
-        return pixels[x][y][1];
+        return pixels[x][y].getG();
     }
 
     /**
@@ -111,7 +137,7 @@ public class PixImage {
      */
     public short getBlue(int x, int y) {
         // Replace the following line with your solution.
-        return pixels[x][y][2];
+        return pixels[x][y].getB();
     }
 
     /**
@@ -129,9 +155,9 @@ public class PixImage {
      */
     public void setPixel(int x, int y, short red, short green, short blue) {
         // Your solution here.
-        pixels[x][y][0] = red;
-        pixels[x][y][1] = green;
-        pixels[x][y][2] = blue;
+        pixels[x][y].setR(red);
+        pixels[x][y].setG(green);
+        pixels[x][y].setB(blue);
     }
 
     /**
@@ -147,13 +173,15 @@ public class PixImage {
         StringBuilder str = new StringBuilder();
         // Replace the following line with your solution.
         for (int i=0; i<width; i++) {
-            str.append("[ ");
+            str.append("[");
             for (int j=0; j<height; j++) {
-                str.append("  ");
-                for (int z=0; z<3; z++){
-                    str.append(Short.toString(pixels[i][j][z]));
-                    str.append(",");
-                }
+                str.append(" ");
+                str.append(Short.toString(pixels[i][j].getR()));
+                str.append("-");
+                str.append(Short.toString(pixels[i][j].getG()));
+                str.append("-");
+                str.append(Short.toString(pixels[i][j].getB()));
+                str.append(",");
             }
             str.append(" ]\n");
         }
@@ -208,8 +236,8 @@ public class PixImage {
 
         for (int i=0; i<w; i++) {
             for (int j=0; j<h; j++) {
-                short[] rgb = pig.findNeighbours(i, j);
-                newPig.setPixel(i, j, rgb[0], rgb[1], rgb[2]);
+                Pixel rgb = pig.pixelBlur(i, j);
+                newPig.setPixel(i, j, rgb.getR(), rgb.getG(), rgb.getB());
             }
         }
         numIterations--;
@@ -217,8 +245,8 @@ public class PixImage {
     }
 
 
-    private short[] findNeighbours(int w, int h) {
-        ArrayList<short[]> neighbours = new ArrayList<>(9);
+    private Pixel pixelBlur(int w, int h) {
+        ArrayList<Pixel> neighbours = new ArrayList<>(9);
         for (int i=w-1; i<=w+1; i++) {
             for (int j=h-1; j<=h+1; j++) {
                 try {
@@ -232,13 +260,12 @@ public class PixImage {
         short red = 0;
         short green = 0;
         short blue = 0;
-        for(short[] rgb: neighbours) {
-            red += rgb[0];
-            green += rgb[1];
-            blue += rgb[2];
+        for(Pixel rgb: neighbours) {
+            red += rgb.getR();
+            green += rgb.getG();
+            blue += rgb.getB();
         }
-        short[] blurRGB = {(short) (red/neighboursCnt), (short) (green/neighboursCnt), (short) (blue/neighboursCnt)};
-        return blurRGB;
+        return new Pixel((short) (red/neighboursCnt), (short) (green/neighboursCnt), (short) (blue/neighboursCnt));
     }
     /**
      * mag2gray() maps an energy (squared vector magnitude) in the range
@@ -282,9 +309,39 @@ public class PixImage {
      */
     public PixImage sobelEdges() {
         // Replace the following line with your solution.
-        return this;
+        PixImage newImage = new PixImage(width, height);
+        for (int i=0; i<width; i++) {
+            for (int j=0; j<height; j++) {
+                short so = energy(i, j);
+                newImage.setPixel(i, j, so, so, so);
+            }
+        }
+        return newImage;
         // Don't forget to use the method mag2gray() above to convert energies to
         // pixel intensities.
+    }
+
+    private long convolutionComputeOneDirection(short[][] sobelOperator, Pixel[][] pixelNeighbours) {
+        long resultR = 0;
+        long resultG = 0;
+        long resultB = 0;
+        for (int i=0; i<3; i++) {
+            for (int j=0; j<3; j++) {
+                resultR += sobelOperator[i][j] * pixelNeighbours[i][j].getR();
+                resultG += sobelOperator[i][j] * pixelNeighbours[i][j].getG();
+                resultB += sobelOperator[i][j] * pixelNeighbours[i][j].getB();
+            }
+        }
+        return resultR*resultR + resultG*resultG + resultB*resultB;
+    }
+
+    private short energy(int w, int h) {
+        short[][] sobelOperatorX = {{1, 0, -1}, {2, 0, -2}, {1, 0, -1}};
+        short[][] sobelOperatorY = {{1, 2, 1}, {0, 0, 0}, {-1, -2, -1}};
+        Pixel[][] neighbours = getSobelPixelNeighbours(w, h);
+        long x = convolutionComputeOneDirection(sobelOperatorX, neighbours);
+        long y = convolutionComputeOneDirection(sobelOperatorY, neighbours);
+        return mag2gray(x+y);
     }
 
 
@@ -420,5 +477,39 @@ public class PixImage {
                 array2PixImage(new int[][]{{122, 143, 74},
                         {74, 143, 122}})),
                 "Incorrect Sobel:\n" + image2.sobelEdges());
+    }
+}
+
+class Pixel {
+    private short r, g, b;
+
+    Pixel (short r, short g, short b) {
+        this.r = r;
+        this.g = g;
+        this.b = b;
+    }
+
+    public short getG() {
+        return g;
+    }
+
+    public short getR() {
+        return r;
+    }
+
+    public short getB() {
+        return b;
+    }
+
+    public void setB(short b) {
+        this.b = b;
+    }
+
+    public void setG(short g) {
+        this.g = g;
+    }
+
+    public void setR(short r) {
+        this.r = r;
     }
 }
