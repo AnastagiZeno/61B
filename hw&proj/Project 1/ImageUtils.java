@@ -16,17 +16,13 @@
  *  @author Joel Galenson
  **/
 
-import java.awt.Color;
+import javax.media.jai.JAI;
+import javax.media.jai.RenderedImageAdapter;
+import javax.swing.*;
+import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
-
-import javax.media.jai.JAI;
-import javax.media.jai.RenderedImageAdapter;
-import javax.swing.Box;
-import javax.swing.ImageIcon;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
 
 /**
  *  ImageUtils contains utilities for reading, writing, and displaying images.
@@ -105,7 +101,7 @@ public class ImageUtils {
 
   /**
    *  writeTIFF() writes a BufferedImage to a specified file in TIFF format.
-   *  @param rle the input BufferedImage.
+   *  @param image the input BufferedImage.
    *  @param filename the output filename.
    */
   private static void writeTIFF(BufferedImage image, String filename) {
