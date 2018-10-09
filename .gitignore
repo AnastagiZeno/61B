@@ -31,5 +31,8 @@ textbook/
 lecs/
 labs/
 codechips/
+hw/
+projects/
 
 idea*
+.gitignore
