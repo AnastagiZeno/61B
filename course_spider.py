@@ -20,7 +20,7 @@ urllib3==1.23
 
 ROOT_PATH = os.path.join(os.path.dirname(__file__), 'hws&projs')
 ROOT_URL = "https://people.eecs.berkeley.edu/~jrs/61b/hw/"
-print(ROOT_PATH)
+print("All files will be downloaded into >> ", ROOT_PATH)
 
 
 def main():
@@ -30,21 +30,12 @@ def main():
     hws = list(filter(lambda x: "Project" in x.text or "Homework" in x.text, hws))
     for idx, hw in enumerate(hws):
         print(">>"*30, '   ', hw.text)
-        index(hw, ROOT_PATH, ROOT_URL)
+        traverse(hw, ROOT_PATH, ROOT_URL)
 
 
-def mkdir(path, name):
-    folder = os.path.exists(os.path.join(path, name))
-    if not folder:
-        os.makedirs(os.path.join(path, name))
-    else:
-        raise RuntimeError("Dir already exists...")
-    return os.path.join(path, name)
-
-
-def index(hw, root_path, root_url):
-    root = mkdir(root_path, hw.text)
-    child_url = root_url + hw.attrs['href'] + '/'
+def traverse(tag, root_path, root_url):
+    root = mkdir(root_path, tag.text)
+    child_url = root_url + tag.attrs['href'] + '/'
     resp = requests.get(child_url)
     soup = BeautifulSoup(resp.content, "html.parser")
     files, dirs = [], []
@@ -83,6 +74,15 @@ def files_downloading(files, root_url, root_path):
 def dirs_downloading(dirs, root_url, root_path):
     for _dir in dirs:
         index(_dir, root_path, root_url)
+
+
+def mkdir(path, name):
+    folder = os.path.exists(os.path.join(path, name))
+    if not folder:
+        os.makedirs(os.path.join(path, name))
+    else:
+        raise RuntimeError("Dir already exists...")
+    return os.path.join(path, name)
 
 
 if __name__ == '__main__':
