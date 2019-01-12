@@ -53,7 +53,7 @@ public class LinkedQueue implements Queue {
   /**
    *  dequeue() removes and returns the object at the front of the Queue.
    *  @return the item dequeued.
-   *  @throws a QueueEmptyException if the Queue is empty.
+//   *  @throws a QueueEmptyException if the Queue is empty.
    **/
   public Object dequeue() throws QueueEmptyException {
     if (head == null) {
@@ -72,7 +72,7 @@ public class LinkedQueue implements Queue {
   /**
    *  front() returns the object at the front of the Queue.
    *  @return the item at the front of the Queue.
-   *  @throws a QueueEmptyException if the Queue is empty.
+//   *  @throws a QueueEmptyException if the Queue is empty.
    **/
   public Object front() throws QueueEmptyException {
     if (head == null) {
